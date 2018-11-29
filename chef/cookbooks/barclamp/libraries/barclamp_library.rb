@@ -417,9 +417,52 @@ module BarclampLibrary
       end
     end
 
+    class DependsOn
+      class << self
+        def add(dependency)
+            @recipe_depedancies ||= Mash.new
+            @recipe_depedancies.merge!(dependency)
+        end
+        def get(recipe)
+            @recipe_depedancies.fetch(recipe, [])
+        end
+      end
+    end
+
     class Config
       class << self
         attr_accessor :node
+
+        def last_two_configs(group, barclamp, instance)
+          prev_cfg = load(group, barclamp, instance)
+          cur_cfg = node[barclamp.to_sym].current_default
+          return prev_cfg, cur_cfg
+        end
+
+        def loadattr(hash, attrlist)
+          i=0
+          while hash.is_a?(Hash)
+            if hash.key?(attrlist[i])
+              hash = hash[attrlist[i]]
+              Chef::Log.debug("smart loadattr #{attrlist[i]}, #{hash}")
+              i+=1
+              return hash if attrlist.length == i
+            else
+              return nil
+            end
+          end
+        end
+
+        def has_changes_to_apply(depedency, group="openstack" ,instance = nil)
+          barclamp = depedency.shift
+          prev_cfg, curr_cfg = Barclamp::Config.last_two_configs(group, barclamp, instance)
+          old = loadattr(prev_cfg, depedency)
+          new = loadattr(curr_cfg, depedency)
+          Chef::Log.debug("smart loadattr prev #{depedency}, #{prev_cfg}")
+          Chef::Log.debug("smart loadattr curr #{depedency}, #{curr_cfg.inspect}")
+          Chef::Log.debug("smart comparisoin #{old}, #{new}")
+          return old != new
+        end
 
         def load(group, barclamp, instance = nil)
           # If no instance is specified, see if this node uses an instance of
