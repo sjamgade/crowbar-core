@@ -420,11 +420,12 @@ module BarclampLibrary
     class DependsOn
       class << self
         def add(dependency)
-            @recipe_depedancies ||= Mash.new
-            @recipe_depedancies.merge!(dependency)
+          @recipe_depedencies ||= Mash.new
+          @recipe_depedencies.merge!(dependency)
         end
+
         def get(recipe)
-            @recipe_depedancies.fetch(recipe, [])
+          @recipe_depedencies.fetch(recipe, [])
         end
       end
     end
@@ -440,20 +441,18 @@ module BarclampLibrary
         end
 
         def loadattr(hash, attrlist)
-          i=0
+          i = 0
+          return hash unless attlist.length > 0
           while hash.is_a?(Hash)
-            if hash.key?(attrlist[i])
-              hash = hash[attrlist[i]]
-              Chef::Log.debug("smart loadattr #{attrlist[i]}, #{hash}")
-              i+=1
-              return hash if attrlist.length == i
-            else
-              return nil
-            end
+            return nil unless hash.key?(attrlist[i])
+            hash = hash[attrlist[i]]
+            Chef::Log.debug("smart loadattr #{attrlist[i]}, #{hash}")
+            i += 1
+            return hash if attrlist.length == i
           end
         end
 
-        def has_changes_to_apply(depedency, group="openstack" ,instance = nil)
+        def changes_to_apply?(depedency, group = "openstack", instance = nil)
           barclamp = depedency.shift
           prev_cfg, curr_cfg = Barclamp::Config.last_two_configs(group, barclamp, instance)
           old = loadattr(prev_cfg, depedency)
@@ -461,7 +460,7 @@ module BarclampLibrary
           Chef::Log.debug("smart loadattr prev #{depedency}, #{prev_cfg}")
           Chef::Log.debug("smart loadattr curr #{depedency}, #{curr_cfg.inspect}")
           Chef::Log.debug("smart comparisoin #{old}, #{new}")
-          return old != new
+          old != new
         end
 
         def load(group, barclamp, instance = nil)
