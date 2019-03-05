@@ -9,7 +9,9 @@
       "nameservers": [ ],
       "additional_search_domains": [ ],
       "records": { },
-      "auto_assign_server": true
+      "auto_assign_server": true,
+      "designate_rndc_key": "",
+      "enable_designate": false
     }
   },
   "deployment": {
